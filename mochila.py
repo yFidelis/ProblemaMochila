@@ -1,53 +1,58 @@
-import random
+import numpy as np
+from tabulate import tabulate
 
-def gerar_itens_aleatorios(quantidade_itens, peso_maximo, valor_maximo):
-    pesos = [random.randint(1, peso_maximo) for _ in range(quantidade_itens)]
-    valores = [random.randint(1, valor_maximo) for _ in range(quantidade_itens)]
-    return pesos, valores
+# Resolve o problema da mochila e constrói a tabela dinamicamente
+def knapsack(capacidade, pesos, valores):
+    n = len(valores)
+    dp = np.zeros((n+1, capacidade+1))
 
-def mochila(pesos, valores, capacidade):
-    n = len(pesos)  # Número de itens
-    dp = [[0 for _ in range(capacidade + 1)] for _ in range(n + 1)]
-
-    # Preencher a matriz dp
-    for i in range(1, n + 1):
-        for c in range(1, capacidade + 1):
-            if pesos[i - 1] <= c:  # Se o peso do item i pode ser incluído na mochila
-                dp[i][c] = max(dp[i - 1][c], dp[i - 1][c - pesos[i - 1]] + valores[i - 1])
+    for i in range(1, n+1):
+        for w in range(1, capacidade+1):
+            if pesos[i-1] <= w:
+                dp[i][w] = max(valores[i-1] + dp[i-1][w-pesos[i-1]], dp[i-1][w])
             else:
-                dp[i][c] = dp[i - 1][c]
+                dp[i][w] = dp[i-1][w]
 
-    # Valor máximo estará em dp[n][capacidade]
-    valor_maximo = dp[n][capacidade]
-
-    # Para rastrear os itens que foram incluídos na mochila
-    itens_selecionados = []
-    c = capacidade
+    w = capacidade
+    itensEscolhidos = []
     for i in range(n, 0, -1):
-        if dp[i][c] != dp[i - 1][c]:  # Significa que o item i foi incluído
-            itens_selecionados.append(i - 1)  # Armazenar o índice do item
-            c -= pesos[i - 1]  # Reduzir a capacidade restante
+        if dp[i][w] != dp[i-1][w]:
+            itensEscolhidos.append(i)
+            w -= pesos[i-1]
 
-    itens_selecionados.reverse()  # Reverter a lista para obter na ordem original
+    return dp, dp[n][capacidade], itensEscolhidos
 
-    return valor_maximo, itens_selecionados
+# Função principal
+def runKnapsackExample():
+    # Pesos e valores fornecidos
+    pesos = [1, 3, 5, 8]
+    valores = [1, 5, 8, 10]
 
-# Configurações para os itens aleatórios
-quantidade_itens = 10  # Número de itens
-peso_maximo = 10  # Peso máximo de cada item
-valor_maximo = 100  # Valor máximo de cada item
-capacidade_mochila = 30  # Capacidade da mochila
+    # Capacidade máxima da mochila
+    capacidade = 11
 
-# Gerar itens aleatórios
-pesos, valores = gerar_itens_aleatorios(quantidade_itens, peso_maximo, valor_maximo)
+    # Executa o algoritmo da mochila e obtém a tabela
+    tabela, valorMaximo, itensEscolhidos = knapsack(capacidade, pesos, valores)
 
-print("Pesos dos itens:", pesos)
-print("Valores dos itens:", valores)
+    # Imprime a tabela
+    capacidadeShow = list(range(1, capacidade + 1))
+    capacidadeShow = [0] + capacidadeShow[:]
+    itensShow = [0] + pesos[:]
+    
+    print("Tabela de valores:")
+    print(tabulate(tabela, headers=capacidadeShow, showindex=itensShow, tablefmt="mixed_grid"))
 
-# Resolver o problema da mochila
-valor_maximo, itens_selecionados = mochila(pesos, valores, capacidade_mochila)
+    # Imprime os resultados
+    print(f"\nValor máximo que pode ser carregado: {valorMaximo}")
+    print(f"Itens escolhidos (índice): {itensEscolhidos}")
 
-print(f"O valor máximo que pode ser obtido é: {valor_maximo}")
-print("Itens selecionados (índices):", itens_selecionados)
-print("Pesos dos itens selecionados:", [pesos[i] for i in itens_selecionados])
-print("Valores dos itens selecionados:", [valores[i] for i in itens_selecionados])
+    for item in itensEscolhidos:
+        print(f"Item com peso {pesos[item-1]} e valor {valores[item-1]} foi adicionado à mochila.")
+
+    capacidadeUsada = sum(pesos[item-1] for item in itensEscolhidos)
+    capacidadeRestante = capacidade - capacidadeUsada
+    print(f"Capacidade utilizada: {capacidadeUsada} ")
+    print(f"Capacidade restante: {capacidadeRestante} ")
+
+if __name__ == "__main__":
+    runKnapsackExample()
